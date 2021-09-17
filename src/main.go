@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/joho/godotenv"
 	redisbus "github.com/paoloposso/crosstown-bus/src/redis-bus"
@@ -12,23 +15,27 @@ func main() {
 
 	bus := redisbus.CreateBus("test1")
 	func() {
-		bus.SubscribeEvent(nil, HandlerSample{})
+		bus.Subscribe(HandlerSample{})
 	}()
 
-	bus.Publish("aaaaaa")
-	bus.Publish("aaaa3343aa")
-	bus.Publish("aaaaaa")
-	bus.Publish("aaaaaa")
-	bus.Publish("232343")
-	bus.Publish("aaaaaa")
-	bus.Publish("aaaaf5434aa")
-	bus.Publish("aaaaaa")
+	bus.Publish(UserCreated{Name: "test"})
 
-	<-make(chan int)
+	errs := make(chan error, 1)
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGINT)
+		errs <- fmt.Errorf("%s", <-c)
+	}()
+	fmt.Println("Terminated ", <-errs)
+}
+
+type UserCreated struct {
+	Name string `json:"name"`
+	Id   int32  `json:"id"`
 }
 
 type HandlerSample struct{}
 
-func (handler HandlerSample) Handle(event struct{}) {
+func (handler HandlerSample) Handle(event string) {
 	fmt.Println(event)
 }

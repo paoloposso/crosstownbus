@@ -1,6 +1,7 @@
 package redisbus
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/go-redis/redis"
@@ -24,15 +25,19 @@ func CreateBus(channel string) eventbus.Bus {
 }
 
 func (bus Bus) Publish(message interface{}) error {
-	_ = bus.redisClient.Publish(bus.channel, message)
+	str, err := json.Marshal(message)
+	if err != nil {
+		fmt.Println(err)
+	}
+	_ = bus.redisClient.Publish(bus.channel, str)
 	return nil
 }
 
-func (bus Bus) SubscribeEvent(config interface{}, eventHandler eventbus.IntegrationEventHandler) {
+func (bus Bus) Subscribe(eventHandler eventbus.IntegrationEventHandler) {
 	fmt.Println("started redis consume")
 	go func() {
 		for msg := range bus.redisClient.Subscribe(bus.channel).Channel() {
-			fmt.Println(msg.Payload)
+			eventHandler.Handle(msg.Payload)
 		}
 		fmt.Println("exited redis channel")
 	}()
