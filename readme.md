@@ -1,4 +1,4 @@
-# Golang Integration Events Bus
+# CrosstownBus: a Golang Integration Event Bus
 
 A Go (golang) event bus that integrates with message brokers.
 Brokers supported so far:
@@ -22,7 +22,7 @@ To create a bus to communicate with Redis, call the respective method, after ins
 bus, err := crosstownbus.CreateRedisBus(reflect.TypeOf(UserCreated{}), "localhost:6379", "")
 ```
 
-After that, the bus (sample name) to do perform the operations your deserve in your project, like publishing messages / events and / or subscribe.
+After that, use the `bus` object (sample name) to do perform the operations your deserve in your project, like publishing messages / events and / or subscribe.
 
 ### Subscribe
 
