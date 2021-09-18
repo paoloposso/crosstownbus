@@ -1,4 +1,4 @@
-module github.com/paoloposso/crosstown-bus
+module github.com/paoloposso/crosstownbus
 
 go 1.16
 
