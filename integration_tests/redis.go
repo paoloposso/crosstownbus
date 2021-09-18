@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
@@ -11,6 +12,20 @@ import (
 	"github.com/joho/godotenv"
 	busfactory "github.com/paoloposso/crosstownbus"
 )
+
+type UserCreated struct {
+	Name string `json:"name"`
+	Id   int32  `json:"id"`
+}
+
+type UserCreatedHandler struct{}
+
+func (handler UserCreatedHandler) Handle(event []byte) {
+	var user *UserCreated
+	json.Unmarshal(event, &user)
+	fmt.Println(user.Name, "received:", time.Now())
+	time.Sleep(5 * time.Second)
+}
 
 // main function, only for testing purpose for now
 func mainx() {
@@ -23,7 +38,7 @@ func mainx() {
 	if err != nil {
 		errs <- err
 	} else {
-		bus.Subscribe(HandlerSample{})
+		bus.Subscribe(UserCreatedHandler{})
 
 		time.Sleep(2 * time.Second)
 
