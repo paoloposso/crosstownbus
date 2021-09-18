@@ -4,20 +4,19 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"reflect"
 	"syscall"
 
 	"github.com/joho/godotenv"
-	redisbus "github.com/paoloposso/crosstown-bus/src/redis-bus"
+	busfactory "github.com/paoloposso/crosstown-bus/src/bus-factory"
 )
 
 func main() {
 	_ = godotenv.Load()
 
-	bus := redisbus.CreateBus("test1")
-	func() {
-		bus.Subscribe(HandlerSample{})
-	}()
+	bus, _ := busfactory.CreateRedisBus(reflect.TypeOf(UserCreated{}), "localhost:6379", "")
 
+	bus.Subscribe(HandlerSample{})
 	bus.Publish(UserCreated{Name: "test"})
 
 	errs := make(chan error, 1)
