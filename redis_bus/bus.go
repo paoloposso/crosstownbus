@@ -3,6 +3,7 @@ package redisbus
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/go-redis/redis"
 	eventbus "github.com/paoloposso/crosstownbus/event_bus"
@@ -42,7 +43,7 @@ func (bus Bus) Publish(message interface{}) error {
 	}
 	cmd := bus.redisClient.Publish(bus.channel, str)
 	if cmd.Err() != nil {
-		panic(cmd.Err().Error())
+		return err
 	}
 	return nil
 }
@@ -52,7 +53,7 @@ func (bus Bus) Subscribe(eventHandler eventbus.IntegrationEventHandler) {
 	go func() {
 		cmd := bus.redisClient.Ping()
 		if cmd.Err() != nil {
-			panic(cmd.Err().Error())
+			log.Fatal(cmd.Err().Error())
 		}
 		for msg := range bus.redisClient.Subscribe(bus.channel).Channel() {
 			go eventHandler.Handle([]byte(msg.Payload))

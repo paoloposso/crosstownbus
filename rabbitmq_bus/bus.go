@@ -24,9 +24,18 @@ type Bus struct {
 
 func CreateBus(eventName string, config RabbitMQOptions) (eventbus.Bus, error) {
 	conn, err := amqp.Dial(config.Uri)
-	failOnError(err, "Failed to connect to RabbitMQ")
+	if err != nil {
+		return nil, err
+	}
 	channel, err := conn.Channel()
-	failOnError(err, "Failed to connect to RabbitMQ")
+	if err != nil {
+		return nil, err
+	}
+	err = channel.ExchangeDeclare(eventName, "fanout", false, false, false, false, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	return Bus{
 		channel: channel,
 		event:   eventName,
@@ -36,14 +45,9 @@ func CreateBus(eventName string, config RabbitMQOptions) (eventbus.Bus, error) {
 func (bus Bus) Publish(message interface{}) error {
 	body, err := json.Marshal(message)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	ch := bus.channel
-
-	err = ch.ExchangeDeclare(bus.event, "fanout", false, false, false, false, nil)
-	failOnError(err, "Failed creating exchange")
-
 	err = ch.Publish(
 		bus.event, // exchange
 		"",        // routing key
@@ -53,7 +57,9 @@ func (bus Bus) Publish(message interface{}) error {
 			ContentType: "text/plain",
 			Body:        []byte(body),
 		})
-	failOnError(err, "Failed to publish a message to RabbitMQ")
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -64,11 +70,17 @@ func (bus Bus) Subscribe(eventHandler eventbus.IntegrationEventHandler) {
 		queueName := fmt.Sprintf("%s_queue", bus.event)
 
 		err := ch.ExchangeDeclare(bus.event, "fanout", false, false, false, false, nil)
-		failOnError(err, "Failed creating exchange")
+		if err != nil {
+			log.Fatal(err)
+		}
 		queue, err := ch.QueueDeclare(queueName, false, false, false, false, nil)
-		failOnError(err, "Failed creating queue")
+		if err != nil {
+			log.Fatal(err)
+		}
 		err = ch.QueueBind(queue.Name, "", bus.event, false, nil)
-		failOnError(err, "Failed binding queue")
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		msgs, err := ch.Consume(
 			queueName,
@@ -79,15 +91,11 @@ func (bus Bus) Subscribe(eventHandler eventbus.IntegrationEventHandler) {
 			false,
 			nil,
 		)
-		failOnError(err, "Failed to start consume")
+		if err != nil {
+			log.Fatal(err)
+		}
 		for msg := range msgs {
 			go eventHandler.Handle(msg.Body)
 		}
 	}()
-}
-
-func failOnError(err error, msg string) {
-	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
-	}
 }

@@ -9,10 +9,16 @@ import (
 )
 
 func CreateRedisBus(event reflect.Type, uri string, password string) (eventbus.Bus, error) {
-	config := redisbus.RedisConfig{Uri: uri, Password: password}
-	return redisbus.CreateBus(event.Name(), config)
+	return redisbus.CreateBus(event.Name(),
+		redisbus.RedisConfig{
+			Uri:      uri,
+			Password: password,
+		})
 }
 
 func CreateRabbitMQBus(event reflect.Type, uri string) (eventbus.Bus, error) {
-	return rabbitmqbus.CreateBus(event.Name(), rabbitmqbus.RabbitMQOptions{Uri: uri})
+	return rabbitmqbus.CreateBus(event.Name(),
+		rabbitmqbus.RabbitMQOptions{
+			Uri: uri,
+		})
 }
