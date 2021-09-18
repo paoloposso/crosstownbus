@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	eventbus "github.com/paoloposso/crosstown-bus/src/event_bus"
+	eventbus "github.com/paoloposso/crosstownbus/event_bus"
 	"github.com/streadway/amqp"
 )
 

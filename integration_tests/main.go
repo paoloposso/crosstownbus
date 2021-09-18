@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	busfactory "github.com/paoloposso/crosstown-bus/src/bus-factory"
+	busfactory "github.com/paoloposso/crosstownbus"
 )
 
 // main function, only for testing purpose for now
