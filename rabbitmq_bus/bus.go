@@ -18,19 +18,18 @@ type RabbitMQOptions struct {
 }
 
 type Bus struct {
-	connection   *amqp.Connection
-	channel      string
-	exchangeName string
+	channel *amqp.Channel
+	event   string
 }
 
-func CreateBus(channel string, config RabbitMQOptions) (eventbus.Bus, error) {
+func CreateBus(eventName string, config RabbitMQOptions) (eventbus.Bus, error) {
 	conn, err := amqp.Dial(config.Uri)
 	failOnError(err, "Failed to connect to RabbitMQ")
-	// defer conn.Close()
+	channel, err := conn.Channel()
+	failOnError(err, "Failed to connect to RabbitMQ")
 	return Bus{
-		connection:   conn,
-		channel:      channel,
-		exchangeName: config.ExchangeName,
+		channel: channel,
+		event:   eventName,
 	}, nil
 }
 
@@ -40,16 +39,16 @@ func (bus Bus) Publish(message interface{}) error {
 		fmt.Println(err)
 		return err
 	}
-	ch, err := bus.connection.Channel()
-	failOnError(err, "Failed to open a channel")
-	defer ch.Close()
-	ch.ExchangeDeclare(bus.exchangeName, "fanout", false, false, false, false, nil)
+	ch := bus.channel
+
+	err = ch.ExchangeDeclare(bus.event, "fanout", false, false, false, false, nil)
+	failOnError(err, "Failed creating exchange")
 
 	err = ch.Publish(
-		bus.exchangeName, // exchange
-		"",               // routing key
-		false,            // mandatory
-		false,            // immediate
+		bus.event, // exchange
+		"",        // routing key
+		false,     // mandatory
+		false,     // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
 			Body:        []byte(body),
@@ -60,12 +59,17 @@ func (bus Bus) Publish(message interface{}) error {
 
 func (bus Bus) Subscribe(eventHandler eventbus.IntegrationEventHandler) {
 	log.Println("Started RabbitMQ consume")
+	ch := bus.channel
 	go func() {
-		ch, err := bus.connection.Channel()
-		failOnError(err, "Failed to open a channel")
-		queueName := fmt.Sprintf("%s_queue", bus.channel)
-		ch.QueueDeclare(queueName, false, false, false, false, nil)
-		ch.QueueBind(queueName, "", bus.exchangeName, false, nil)
+		queueName := fmt.Sprintf("%s_queue", bus.event)
+
+		err := ch.ExchangeDeclare(bus.event, "fanout", false, false, false, false, nil)
+		failOnError(err, "Failed creating exchange")
+		queue, err := ch.QueueDeclare(queueName, false, false, false, false, nil)
+		failOnError(err, "Failed creating queue")
+		err = ch.QueueBind(queue.Name, "", bus.event, false, nil)
+		failOnError(err, "Failed binding queue")
+
 		msgs, err := ch.Consume(
 			queueName,
 			"",
@@ -77,7 +81,7 @@ func (bus Bus) Subscribe(eventHandler eventbus.IntegrationEventHandler) {
 		)
 		failOnError(err, "Failed to start consume")
 		for msg := range msgs {
-			eventHandler.Handle(msg.Body)
+			go eventHandler.Handle(msg.Body)
 		}
 	}()
 }
