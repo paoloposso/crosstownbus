@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-redis/redis"
-	eventbus "github.com/paoloposso/crosstown-bus/src/event-bus"
+	eventbus "github.com/paoloposso/crosstown-bus/src/event_bus"
 )
 
 type RedisConfig struct {
@@ -54,8 +54,7 @@ func (bus Bus) Subscribe(eventHandler eventbus.IntegrationEventHandler) {
 			panic(cmd.Err().Error())
 		}
 		for msg := range bus.redisClient.Subscribe(bus.channel).Channel() {
-			eventHandler.Handle(msg.Payload)
+			eventHandler.Handle([]byte(msg.Payload))
 		}
-		fmt.Println("exited redis channel")
 	}()
 }

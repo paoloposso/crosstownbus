@@ -1,5 +1,5 @@
 package eventbus
 
 type IntegrationEventHandler interface {
-	Handle(event string)
+	Handle(event []byte)
 }
