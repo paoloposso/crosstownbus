@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
@@ -10,28 +9,14 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	busfactory "github.com/paoloposso/crosstownbus"
+	"github.com/paoloposso/crosstownbus"
 )
-
-type UserCreated struct {
-	Name string `json:"name"`
-	Id   int32  `json:"id"`
-}
-
-type HandlerSample struct{}
-
-func (handler HandlerSample) Handle(event []byte) {
-	var user *UserCreated
-	json.Unmarshal(event, &user)
-	fmt.Println(user.Name, "received:", time.Now())
-	time.Sleep(5 * time.Second)
-}
 
 // main function, only for testing purpose for now
 func main() {
 	_ = godotenv.Load()
 
-	bus, err := busfactory.CreateRabbitMQBus(reflect.TypeOf(UserCreated{}), "amqp://guest:guest@localhost:5672/")
+	bus, err := crosstownbus.CreateRabbitMQBus(reflect.TypeOf(UserCreated{}), "amqp://guest:guest@localhost:5672/")
 
 	errs := make(chan error, 1)
 
