@@ -23,7 +23,7 @@ func main() {
 	if err != nil {
 		errs <- err
 	} else {
-		bus.Subscribe(HandlerSample{})
+		bus.Subscribe(UserCreatedHandler{})
 
 		time.Sleep(2 * time.Second)
 
