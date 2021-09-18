@@ -7,15 +7,17 @@ import (
 	"os/signal"
 	"reflect"
 	"syscall"
+	"time"
 
 	"github.com/joho/godotenv"
-	busfactory "github.com/paoloposso/crosstown-bus/src/bus-factory"
+	busfactory "github.com/pvictorsys/crosstown-bus/src/bus-factory"
 )
 
+// main function, only for testing purpose for now
 func main() {
 	_ = godotenv.Load()
 
-	bus, err := busfactory.CreateRedisBus(reflect.TypeOf(UserCreated{}), "localhostx:6379", "")
+	bus, err := busfactory.CreateRedisBus(reflect.TypeOf(UserCreated{}), "localhost:6379", "")
 
 	errs := make(chan error, 1)
 
@@ -23,6 +25,8 @@ func main() {
 		errs <- err
 	} else {
 		bus.Subscribe(HandlerSample{})
+
+		time.Sleep(2 * time.Second)
 
 		bus.Publish(UserCreated{Name: "tes324t"})
 		bus.Publish(UserCreated{Name: "test"})
@@ -48,5 +52,6 @@ type HandlerSample struct{}
 func (handler HandlerSample) Handle(event []byte) {
 	var user *UserCreated
 	json.Unmarshal(event, &user)
-	fmt.Println(user.Name)
+	fmt.Println(user.Name, "received:", time.Now())
+	time.Sleep(5 * time.Second)
 }

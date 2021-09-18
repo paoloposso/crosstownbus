@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-redis/redis"
-	eventbus "github.com/paoloposso/crosstown-bus/src/event_bus"
+	eventbus "github.com/pvictorsys/crosstown-bus/src/event_bus"
 )
 
 type RedisConfig struct {
@@ -38,6 +38,7 @@ func (bus Bus) Publish(message interface{}) error {
 	str, err := json.Marshal(message)
 	if err != nil {
 		fmt.Println(err)
+		return err
 	}
 	cmd := bus.redisClient.Publish(bus.channel, str)
 	if cmd.Err() != nil {
@@ -54,7 +55,7 @@ func (bus Bus) Subscribe(eventHandler eventbus.IntegrationEventHandler) {
 			panic(cmd.Err().Error())
 		}
 		for msg := range bus.redisClient.Subscribe(bus.channel).Channel() {
-			eventHandler.Handle([]byte(msg.Payload))
+			go eventHandler.Handle([]byte(msg.Payload))
 		}
 	}()
 }
