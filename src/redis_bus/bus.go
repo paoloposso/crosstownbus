@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-redis/redis"
-	eventbus "github.com/pvictorsys/crosstown-bus/src/event_bus"
+	eventbus "github.com/paoloposso/crosstown-bus/src/event_bus"
 )
 
 type RedisConfig struct {
