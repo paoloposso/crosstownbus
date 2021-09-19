@@ -13,12 +13,7 @@ import (
 	eventsamples "github.com/paoloposso/crosstownbus/event_samples"
 )
 
-func main() {
-	TestConsumeRabbit()
-}
-
-// main function, only for testing purpose for now
-func TestConsumeRabbit() {
+func testConsumeRabbit() {
 	_ = godotenv.Load()
 
 	bus, err := crosstownbus.CreateRabbitMQEventBus("amqp://guest:guest@localhost:5672/")

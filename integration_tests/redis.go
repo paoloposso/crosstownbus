@@ -13,8 +13,7 @@ import (
 	eventsamples "github.com/paoloposso/crosstownbus/event_samples"
 )
 
-// main function, only for testing purpose for now
-func TestConsumeRedis() {
+func testConsumeRedis() {
 	_ = godotenv.Load()
 
 	bus, err := crosstownbus.CreateRedisEventBus("localhost:6379", "")
