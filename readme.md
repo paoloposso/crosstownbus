@@ -62,8 +62,7 @@ func (handler UserCreatedHandler) Handle(event []byte) {
 The same bus object can be used to publish events as well. 
 * Use the `Publish` method to do it.
 * Passing the event object as parameter.
-* Also pass the  
 
 ```shell
-bus.Publish(reflect.TypeOf(UserCreated{}), UserCreated{Name: "test", Id: 55})
+bus.Publish(UserCreated{Name: "test", Id: 55})
 ```
