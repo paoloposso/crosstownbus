@@ -8,17 +8,18 @@ import (
 	redisbus "github.com/paoloposso/crosstownbus/redis_bus"
 )
 
-func CreateRedisBus(event reflect.Type, uri string, password string) (eventbus.Bus, error) {
-	return redisbus.CreateBus(event.Name(),
+func CreateRedisEventBus(event reflect.Type, uri string, password string) (eventbus.EventBus, error) {
+	return redisbus.CreateBus(
+		event.Name(),
 		redisbus.RedisConfig{
 			Uri:      uri,
 			Password: password,
 		})
 }
 
-func CreateRabbitMQBus(event reflect.Type, uri string) (eventbus.Bus, error) {
-	return rabbitmqbus.CreateBus(event.Name(),
-		rabbitmqbus.RabbitMQOptions{
+func CreateRabbitMQEventBus(uri string) (eventbus.EventBus, error) {
+	return rabbitmqbus.CreateBus(
+		rabbitmqbus.RabbitMQConfig{
 			Uri: uri,
 		})
 }

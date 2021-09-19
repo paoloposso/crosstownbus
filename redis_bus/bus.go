@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"reflect"
 
 	"github.com/go-redis/redis"
 	eventbus "github.com/paoloposso/crosstownbus/event_bus"
@@ -19,7 +20,7 @@ type Bus struct {
 	channel     string
 }
 
-func CreateBus(channel string, config RedisConfig) (eventbus.Bus, error) {
+func CreateBus(channel string, config RedisConfig) (eventbus.EventBus, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     config.Uri,
 		Password: config.Password,
@@ -35,7 +36,7 @@ func CreateBus(channel string, config RedisConfig) (eventbus.Bus, error) {
 	}, nil
 }
 
-func (bus Bus) Publish(message interface{}) error {
+func (bus Bus) Publish(event reflect.Type, message interface{}) error {
 	str, err := json.Marshal(message)
 	if err != nil {
 		fmt.Println(err)
@@ -48,7 +49,7 @@ func (bus Bus) Publish(message interface{}) error {
 	return nil
 }
 
-func (bus Bus) Subscribe(eventHandler eventbus.IntegrationEventHandler) {
+func (bus Bus) Subscribe(event reflect.Type, eventHandler eventbus.IntegrationEventHandler) {
 	fmt.Println("started redis consume")
 	go func() {
 		cmd := bus.redisClient.Ping()

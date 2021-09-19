@@ -1,6 +1,6 @@
 # CrosstownBus: a Golang Integration Event Bus
 
-A Go (golang) event bus that integrates with message brokers.
+A Go (golang) event and command bus that integrates with message brokers.
 Brokers supported so far:
 * Redis
 * RabbitMQ
@@ -19,17 +19,17 @@ go get github.com/paoloposso/crosstownbus
 To create a bus to communicate with Redis, call the respective method, after installing and importing the crosstown module.
 
 ```shell
-bus, err := crosstownbus.CreateRedisBus(reflect.TypeOf(UserCreated{}), "localhost:6379", "")
+bus, err := crosstownbus.CreateRedisBus("localhost:6379", "")
 ```
 
 After that, use the `bus` object (sample name) to do perform the operations your deserve in your project, like publishing messages / events and / or subscribe.
 
-### Subscribe
+### Subscribing to Events
 
-When subscribing to an event, it's necessary to pass a handler as parameter, as shown bellow.
+When subscribing to an event, it's necessary to pass a handler as parameter, as shown bellow. It's also necessary to inform the event type. Use the type of the event you are creating to enforce the same type between publisher and subscribers 
 
 ```shell
-bus.Subscribe(UserCreatedHandler{})
+bus.Subscribe(reflect.TypeOf(UserCreated{}), UserCreatedHandler{})
 ```
 
 This Handler must implement the interface IntegrationEventHandler, with a method `handler`.

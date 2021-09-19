@@ -4,25 +4,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"reflect"
 
 	eventbus "github.com/paoloposso/crosstownbus/event_bus"
 	"github.com/streadway/amqp"
 )
 
-type RabbitMQOptions struct {
-	Uri          string
-	QueueName    string
-	ExchangeName string
-	// RoutingKey   string
-	// ExchangeType string - only fanout exchanges for now. Other types will be added in the next version
+type RabbitMQConfig struct {
+	Uri string
 }
 
-type Bus struct {
+type EventBus struct {
 	channel *amqp.Channel
-	event   string
+	//event   string
 }
 
-func CreateBus(eventName string, config RabbitMQOptions) (eventbus.Bus, error) {
+func CreateBus(config RabbitMQConfig) (eventbus.EventBus, error) {
 	conn, err := amqp.Dial(config.Uri)
 	if err != nil {
 		return nil, err
@@ -31,25 +28,28 @@ func CreateBus(eventName string, config RabbitMQOptions) (eventbus.Bus, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = channel.ExchangeDeclare(eventName, "fanout", false, false, false, false, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	return Bus{
+	return EventBus{
 		channel: channel,
-		event:   eventName,
+		//event:   eventName,
 	}, nil
 }
 
-func (bus Bus) Publish(message interface{}) error {
+func (pub EventBus) Publish(event reflect.Type, message interface{}) error {
+	eventName := event.Name()
 	body, err := json.Marshal(message)
 	if err != nil {
 		return err
 	}
-	ch := bus.channel
+	ch := pub.channel
+	err = ch.ExchangeDeclare(eventName, "fanout", false, false, false, false, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 	err = ch.Publish(
-		bus.event, // exchange
+		eventName, // exchange
 		"",        // routing key
 		false,     // mandatory
 		false,     // immediate
@@ -63,13 +63,14 @@ func (bus Bus) Publish(message interface{}) error {
 	return nil
 }
 
-func (bus Bus) Subscribe(eventHandler eventbus.IntegrationEventHandler) {
+func (bus EventBus) Subscribe(event reflect.Type, eventHandler eventbus.IntegrationEventHandler) {
 	log.Println("Started RabbitMQ consume")
+	eventName := event.Name()
 	ch := bus.channel
 	go func() {
-		queueName := fmt.Sprintf("%s_queue", bus.event)
+		queueName := fmt.Sprintf("%s_%s_queue", eventName, reflect.TypeOf(eventHandler).Name())
 
-		err := ch.ExchangeDeclare(bus.event, "fanout", false, false, false, false, nil)
+		err := ch.ExchangeDeclare(eventName, "fanout", false, false, false, false, nil)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -77,7 +78,7 @@ func (bus Bus) Subscribe(eventHandler eventbus.IntegrationEventHandler) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = ch.QueueBind(queue.Name, "", bus.event, false, nil)
+		err = ch.QueueBind(queue.Name, "", eventName, false, nil)
 		if err != nil {
 			log.Fatal(err)
 		}
