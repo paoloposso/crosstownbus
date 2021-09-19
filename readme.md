@@ -7,7 +7,7 @@ Brokers supported so far:
 
 The objective of this project is to abstract the communication between projects and message brokers, facilitating the creation of event-based services and micro-services.
 
-## Instalation
+## Installation
 Run the command below to add crosstownbus as a library in your project:
 
 ```shell
@@ -38,7 +38,6 @@ When using RabbitMQ we are doing it by creating a `fanout exchange` for each `ev
 This Handler must implement the interface IntegrationEventHandler, with a method `handler`.
 Any message received by the broker will be passed to the handlers as an array of bytes `[]byte`.
 The message will then be able to be handled as wanted inside of your project.
-
 ```shell
 type IntegrationEventHandler interface {
 	Handle(event []byte)
