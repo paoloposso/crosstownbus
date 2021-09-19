@@ -1,4 +1,4 @@
-# CrosstownBus: a Golang Integration Event Bus
+# CrosstownBus: a Golang Integration Event and Command Bus
 
 A Go (golang) event and command bus that integrates with message brokers.
 Brokers supported so far:
@@ -14,7 +14,7 @@ Run the command below to add crosstownbus as a library in your project:
 go get github.com/paoloposso/crosstownbus
 ```
 
-## Usage Example
+## Using CrosstownBus as an Event Bus
 
 To create a bus to communicate using RabbitMQ, call the respective method, after installing and importing the crosstown module.
 
@@ -26,7 +26,9 @@ After that, use the `bus` object (sample name) to do perform the operations your
 
 ### Subscribing to Events
 
-When subscribing to an event, it's necessary to pass a handler as parameter, as shown bellow. It's also necessary to inform the event type. Use the type of the event you are creating to enforce the same type between publisher and subscribers 
+When subscribing to an event, it's necessary to pass a handler as parameter, as shown bellow. 
+* It's also necessary to inform the event type. 
+* Use the type of the event you are creating to enforce the same type between publisher and subscribers 
 
 ```shell
 bus.Subscribe(reflect.TypeOf(UserCreated{}), UserCreatedHandler{})
@@ -54,4 +56,14 @@ func (handler UserCreatedHandler) Handle(event []byte) {
 	fmt.Println(user.Name, "received:", time.Now())
 	time.Sleep(5 * time.Second)
 }
+```
+
+### Publishing Events
+The same bus object can be used to publish events as well. 
+* Use the `Publish` method to do it.
+* Passing the event object as parameter.
+* Also pass the  
+
+```shell
+bus.Publish(reflect.TypeOf(UserCreated{}), UserCreated{Name: "test", Id: 55})
 ```

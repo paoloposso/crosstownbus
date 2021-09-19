@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
@@ -11,33 +10,15 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/paoloposso/crosstownbus"
+	eventsamples "github.com/paoloposso/crosstownbus/event_samples"
 )
 
-type UserCreated struct {
-	Name string `json:"name"`
-	Id   int32  `json:"id"`
-}
-
-type UserCreatedHandler struct{}
-
-func (handler UserCreatedHandler) Handle(event []byte) {
-	var user *UserCreated
-	json.Unmarshal(event, &user)
-	fmt.Println(user.Name, "received:", time.Now())
-	time.Sleep(5 * time.Second)
-}
-
-type UserCreatedHandler2 struct{}
-
-func (handler UserCreatedHandler2) Handle(event []byte) {
-	var user *UserCreated
-	json.Unmarshal(event, &user)
-	fmt.Println(user.Name, "received:", time.Now())
-	time.Sleep(5 * time.Second)
+func main() {
+	TestConsumeRabbit()
 }
 
 // main function, only for testing purpose for now
-func main() {
+func TestConsumeRabbit() {
 	_ = godotenv.Load()
 
 	bus, err := crosstownbus.CreateRabbitMQEventBus("amqp://guest:guest@localhost:5672/")
@@ -47,13 +28,16 @@ func main() {
 	if err != nil {
 		errs <- err
 	} else {
-		bus.Subscribe(reflect.TypeOf(UserCreated{}), UserCreatedHandler{})
-		bus.Subscribe(reflect.TypeOf(UserCreated{}), UserCreatedHandler2{})
+		bus.Subscribe(reflect.TypeOf(eventsamples.UserCreated{}), eventsamples.UserCreatedHandler{})
+		bus.Subscribe(reflect.TypeOf(eventsamples.UserCreated{}), eventsamples.UserCreatedHandler2{})
 
 		time.Sleep(2 * time.Second)
 
-		bus.Publish(reflect.TypeOf(UserCreated{}), UserCreated{Name: "tes324t"})
-		bus.Publish(reflect.TypeOf(UserCreated{}), UserCreated{Name: "test", Id: 55})
+		bus.Publish(eventsamples.UserCreated{Name: "test", Id: 55})
+		bus.Publish(eventsamples.UserCreated{Name: "test", Id: 11243455})
+		bus.Publish(eventsamples.UserCreated{Name: "test", Id: 5125})
+		bus.Publish(eventsamples.UserCreated{Name: "test", Id: 55})
+		bus.Publish(eventsamples.UserCreated{Name: "test", Id: 522325})
 	}
 
 	go func() {

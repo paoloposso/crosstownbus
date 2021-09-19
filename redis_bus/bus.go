@@ -17,10 +17,9 @@ type RedisConfig struct {
 
 type Bus struct {
 	redisClient *redis.Client
-	channel     string
 }
 
-func CreateBus(channel string, config RedisConfig) (eventbus.EventBus, error) {
+func CreateBus(config RedisConfig) (eventbus.EventBus, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     config.Uri,
 		Password: config.Password,
@@ -32,17 +31,18 @@ func CreateBus(channel string, config RedisConfig) (eventbus.EventBus, error) {
 	}
 	return Bus{
 		redisClient: client,
-		channel:     channel,
 	}, nil
 }
 
-func (bus Bus) Publish(event reflect.Type, message interface{}) error {
+func (bus Bus) Publish(message interface{}) error {
+	tp := reflect.TypeOf(message)
+	eventName := tp.Name()
 	str, err := json.Marshal(message)
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
-	cmd := bus.redisClient.Publish(bus.channel, str)
+	cmd := bus.redisClient.Publish(eventName, str)
 	if cmd.Err() != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (bus Bus) Subscribe(event reflect.Type, eventHandler eventbus.IntegrationEv
 		if cmd.Err() != nil {
 			log.Fatal(cmd.Err().Error())
 		}
-		for msg := range bus.redisClient.Subscribe(bus.channel).Channel() {
+		for msg := range bus.redisClient.Subscribe(event.Name()).Channel() {
 			go eventHandler.Handle([]byte(msg.Payload))
 		}
 	}()

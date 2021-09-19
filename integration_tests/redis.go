@@ -10,27 +10,27 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/paoloposso/crosstownbus"
+	eventsamples "github.com/paoloposso/crosstownbus/event_samples"
 )
 
 // main function, only for testing purpose for now
-func mainx() {
+func TestConsumeRedis() {
 	_ = godotenv.Load()
 
-	bus, err := crosstownbus.CreateRedisEventBus(reflect.TypeOf(UserCreated{}), "localhost:6379", "")
+	bus, err := crosstownbus.CreateRedisEventBus("localhost:6379", "")
 
 	errs := make(chan error, 1)
 
 	if err != nil {
 		errs <- err
 	} else {
-		bus.Subscribe(reflect.TypeOf(UserCreated{}), UserCreatedHandler{})
-
+		bus.Subscribe(reflect.TypeOf(eventsamples.UserCreated{}), eventsamples.UserCreatedHandler{})
+		bus.Subscribe(reflect.TypeOf(eventsamples.UserCreated{}), eventsamples.UserCreatedHandler2{})
 		time.Sleep(2 * time.Second)
-
-		bus.Publish(reflect.TypeOf(UserCreated{}), UserCreated{Name: "tes324t"})
-		bus.Publish(reflect.TypeOf(UserCreated{}), UserCreated{Name: "test"})
-		bus.Publish(reflect.TypeOf(UserCreated{}), UserCreated{Name: "tes34t"})
-		bus.Publish(reflect.TypeOf(UserCreated{}), UserCreated{Name: "test4"})
+		bus.Publish(eventsamples.UserCreated{Name: "tes324t"})
+		bus.Publish(eventsamples.UserCreated{Name: "asddsdsad"})
+		bus.Publish(eventsamples.UserCreated{Name: "12TOEf"})
+		bus.Publish(eventsamples.UserCreated{Name: "ZZZZZZZ"})
 	}
 
 	go func() {
