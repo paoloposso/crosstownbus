@@ -18,7 +18,7 @@ func CreateRedisEventBus(event reflect.Type, uri string, password string) (event
 }
 
 func CreateRabbitMQEventBus(uri string) (eventbus.EventBus, error) {
-	return rabbitmqbus.CreateBus(
+	return rabbitmqbus.CreateEventBus(
 		rabbitmqbus.RabbitMQConfig{
 			Uri: uri,
 		})

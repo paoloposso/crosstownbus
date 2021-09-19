@@ -19,7 +19,7 @@ type EventBus struct {
 	//event   string
 }
 
-func CreateBus(config RabbitMQConfig) (eventbus.EventBus, error) {
+func CreateEventBus(config RabbitMQConfig) (eventbus.EventBus, error) {
 	conn, err := amqp.Dial(config.Uri)
 	if err != nil {
 		return nil, err
