@@ -33,12 +33,12 @@ func CreateEventBus(config RabbitMQConfig) (eventbus.EventBus, error) {
 	}
 	return EventBus{
 		channel: channel,
-		//event:   eventName,
 	}, nil
 }
 
-func (pub EventBus) Publish(event reflect.Type, message interface{}) error {
-	eventName := event.Name()
+func (pub EventBus) Publish(message interface{}) error {
+	tp := reflect.TypeOf(message)
+	eventName := tp.Name()
 	body, err := json.Marshal(message)
 	if err != nil {
 		return err
