@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/paoloposso/crosstownbus"
-	eventsamples "github.com/paoloposso/crosstownbus/event_samples"
+	eventsamples "github.com/paoloposso/crosstownbus/integration_tests/event_samples"
 )
 
 func TestCreateRabbitEventBus(t *testing.T) {
