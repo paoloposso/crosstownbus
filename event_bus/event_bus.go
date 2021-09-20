@@ -4,5 +4,5 @@ import "reflect"
 
 type EventBus interface {
 	Publish(message interface{}) error
-	Subscribe(event reflect.Type, eventHandler IntegrationEventHandler)
+	Subscribe(event reflect.Type, eventHandler IntegrationEventHandler) error
 }

@@ -3,7 +3,6 @@ package redisbus
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"reflect"
 
 	"github.com/go-redis/redis"
@@ -49,15 +48,16 @@ func (bus Bus) Publish(message interface{}) error {
 	return nil
 }
 
-func (bus Bus) Subscribe(event reflect.Type, eventHandler eventbus.IntegrationEventHandler) {
+func (bus Bus) Subscribe(event reflect.Type, eventHandler eventbus.IntegrationEventHandler) error {
+	cmd := bus.redisClient.Ping()
+	if cmd.Err() != nil {
+		return cmd.Err()
+	}
 	fmt.Println("started redis consume")
 	go func() {
-		cmd := bus.redisClient.Ping()
-		if cmd.Err() != nil {
-			log.Fatal(cmd.Err().Error())
-		}
 		for msg := range bus.redisClient.Subscribe(event.Name()).Channel() {
 			go eventHandler.Handle([]byte(msg.Payload))
 		}
 	}()
+	return nil
 }

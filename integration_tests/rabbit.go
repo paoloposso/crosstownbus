@@ -40,5 +40,6 @@ func testConsumeRabbit() {
 		signal.Notify(c, syscall.SIGINT)
 		errs <- fmt.Errorf("%s", <-c)
 	}()
+
 	fmt.Println("Terminated. Reason:", <-errs)
 }

@@ -63,40 +63,39 @@ func (pub EventBus) Publish(message interface{}) error {
 	return nil
 }
 
-func (bus EventBus) Subscribe(event reflect.Type, eventHandler eventbus.IntegrationEventHandler) {
+func (bus EventBus) Subscribe(event reflect.Type, eventHandler eventbus.IntegrationEventHandler) error {
 	log.Println("Started RabbitMQ consume")
 	eventName := event.Name()
 	ch := bus.channel
+	queueName := fmt.Sprintf("%s_%s_queue", eventName, reflect.TypeOf(eventHandler).Name())
+	err := ch.ExchangeDeclare(eventName, "fanout", false, false, false, false, nil)
+	if err != nil {
+		return err
+	}
+	queue, err := ch.QueueDeclare(queueName, false, false, false, false, nil)
+	if err != nil {
+		return err
+	}
+	err = ch.QueueBind(queue.Name, "", eventName, false, nil)
+	if err != nil {
+		return err
+	}
+	msgs, err := ch.Consume(
+		queueName,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return err
+	}
 	go func() {
-		queueName := fmt.Sprintf("%s_%s_queue", eventName, reflect.TypeOf(eventHandler).Name())
-
-		err := ch.ExchangeDeclare(eventName, "fanout", false, false, false, false, nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-		queue, err := ch.QueueDeclare(queueName, false, false, false, false, nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = ch.QueueBind(queue.Name, "", eventName, false, nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		msgs, err := ch.Consume(
-			queueName,
-			"",
-			true,
-			false,
-			false,
-			false,
-			nil,
-		)
-		if err != nil {
-			log.Fatal(err)
-		}
 		for msg := range msgs {
 			go eventHandler.Handle(msg.Body)
 		}
 	}()
+	return nil
 }
