@@ -14,7 +14,7 @@ type RedisConfig struct {
 	Password string
 }
 
-type Bus struct {
+type EventBus struct {
 	redisClient *redis.Client
 }
 
@@ -28,12 +28,12 @@ func CreateBus(config RedisConfig) (eventbus.EventBus, error) {
 	if cmd.Err() != nil {
 		return nil, cmd.Err()
 	}
-	return Bus{
+	return EventBus{
 		redisClient: client,
 	}, nil
 }
 
-func (bus Bus) Publish(message interface{}) error {
+func (bus EventBus) Publish(message interface{}) error {
 	tp := reflect.TypeOf(message)
 	eventName := tp.Name()
 	str, err := json.Marshal(message)
@@ -48,7 +48,7 @@ func (bus Bus) Publish(message interface{}) error {
 	return nil
 }
 
-func (bus Bus) Subscribe(event reflect.Type, eventHandler eventbus.IntegrationEventHandler) error {
+func (bus EventBus) Subscribe(event reflect.Type, eventHandler eventbus.IntegrationEventHandler) error {
 	cmd := bus.redisClient.Ping()
 	if cmd.Err() != nil {
 		return cmd.Err()

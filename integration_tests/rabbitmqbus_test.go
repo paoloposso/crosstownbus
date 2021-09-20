@@ -22,7 +22,7 @@ func TestRabbitPubSub(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Error: %q", err)
 	} else {
-		err = bus.Subscribe(reflect.TypeOf(eventsamples.UserCreated{}), eventsamples.UserCreatedHandler{})
+		err = bus.Subscribe(reflect.TypeOf(eventsamples.UserCreated{}), eventsamples.UserCreatedSendMailHandler{})
 		if err != nil {
 			log.Fatalf("Error: %q", err)
 		}

@@ -16,7 +16,6 @@ type RabbitMQConfig struct {
 
 type EventBus struct {
 	channel *amqp.Channel
-	//event   string
 }
 
 func CreateEventBus(config RabbitMQConfig) (eventbus.EventBus, error) {
