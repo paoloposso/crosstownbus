@@ -48,12 +48,11 @@ func (bus EventBus) Publish(message interface{}) error {
 	return nil
 }
 
-func (bus EventBus) Subscribe(event reflect.Type, eventHandler eventbus.IntegrationEventHandler) error {
+func (bus EventBus) Subscribe(event reflect.Type, eventHandler eventbus.EventHandler, resilienceOptions *eventbus.ResilienceOptions) error {
 	cmd := bus.redisClient.Ping()
 	if cmd.Err() != nil {
 		return cmd.Err()
 	}
-	fmt.Println("started redis consume")
 	go func() {
 		for msg := range bus.redisClient.Subscribe(event.Name()).Channel() {
 			go eventHandler.Handle([]byte(msg.Payload))

@@ -31,11 +31,11 @@ When subscribing to an event, it's necessary to pass a handler as parameter, as 
 * Use the type of the event you are creating to enforce the same type between publisher and subscribers 
 
 ```shell
-bus.Subscribe(reflect.TypeOf(UserCreated{}), UserCreatedHandler{})
+bus.Subscribe(reflect.TypeOf(UserCreated{}), UserCreatedHandler{}, nil)
 ```
 
 If you subscribe to a same event by using the same event type (like UserCreated in this example) the result will be multiple handlers receiving the same message.
-When using RabbitMQ we are doing it by creating a `fanout exchange` for each `event` and a `queue`, connected to this exchange, for each `handler`.
+When using RabbitMQ we are doing it by creating a `fanout exchange` for each `event` and a `queue`, connected to this exchange, for each `handler`. Note that, in this case, if you have multiple handlers with the same event pointing to the same event, the result is that a single queue will be created and, therefore, the messages will be balanced over the handlers.
 
 This Handler must implement the interface IntegrationEventHandler, with a method `handler`.
 Any message received by the broker will be passed to the handlers as an array of bytes `[]byte`.
