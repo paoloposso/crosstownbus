@@ -65,7 +65,7 @@ func (pub EventBus) Publish(message interface{}) error {
 func (bus EventBus) Subscribe(event reflect.Type, eventHandler eventbus.EventHandler, resilienceOptions *eventbus.ResilienceOptions) error {
 	eventName := event.Name()
 	ch := bus.channel
-	queueName := fmt.Sprintf("%s_%s_queue", eventName, reflect.TypeOf(eventHandler).Name())
+	queueName := fmt.Sprintf("%s.%s_queue", eventName, reflect.TypeOf(eventHandler).Name())
 
 	err := ch.ExchangeDeclare(eventName, "fanout", false, false, false, false, nil)
 	if err != nil {
@@ -124,21 +124,12 @@ func (bus EventBus) Subscribe(event reflect.Type, eventHandler eventbus.EventHan
 	return nil
 }
 
-func handleWithRetry(msgs <-chan amqp.Delivery, eventHandler eventbus.EventHandler, maxRetry uint16) {
+func handleWithRetry(msgs <-chan amqp.Delivery, eventHandler eventbus.EventHandler, maxRetry int32) {
 	go func() {
 		for msg := range msgs {
 			if err := eventHandler.Handle(msg.Body); err != nil {
 				log.Printf("Error handling message: %s", err)
-				var redeliveryCount uint16 = 0
-				if msg.Headers["x-redelivered-count"] != nil {
-					redeliveryCount = msg.Headers["x-redelivered-count"].(uint16)
-				}
-				if redeliveryCount >= maxRetry {
-					msg.Ack(false)
-				} else {
-					msg.Headers["x-redelivered-count"] = redeliveryCount + 1
-					msg.Reject(false)
-				}
+				rejectMessage(msg, maxRetry)
 			} else {
 				msg.Ack(false)
 			}
@@ -146,7 +137,27 @@ func handleWithRetry(msgs <-chan amqp.Delivery, eventHandler eventbus.EventHandl
 	}()
 }
 
-func (bus EventBus) createDeadLetter(queueName string, handler string, retrySeconds uint16) (string, string, error) {
+func rejectMessage(msg amqp.Delivery, maxRetry int32) {
+	var redeliveryCount int32 = 0
+
+	if msg.Headers == nil {
+		msg.Headers = make(amqp.Table)
+	}
+	if _, exists := msg.Headers["x-redelivered-count"]; !exists {
+		msg.Headers["x-redelivered-count"] = int32(1)
+	}
+
+	redeliveryCount = msg.Headers["x-redelivered-count"].(int32) + 1
+
+	if redeliveryCount > maxRetry {
+		msg.Ack(false)
+	} else {
+		msg.Headers["x-redelivered-count"] = redeliveryCount
+		msg.Reject(false)
+	}
+}
+
+func (bus EventBus) createDeadLetter(queueName string, handler string, retrySeconds uint32) (string, string, error) {
 	exchangeNameDl := fmt.Sprintf("%s_retryexh", queueName)
 	queueNameDl := fmt.Sprintf("%s_retry", queueName)
 
@@ -154,7 +165,7 @@ func (bus EventBus) createDeadLetter(queueName string, handler string, retrySeco
 		exchangeNameDl,
 		"direct",
 		true,
-		false,
+		true,
 		false,
 		false,
 		nil,
@@ -165,7 +176,7 @@ func (bus EventBus) createDeadLetter(queueName string, handler string, retrySeco
 	options := amqp.Table{
 		"x-dead-letter-exchange":    exchangeNameDl,
 		"x-dead-letter-routing-key": queueName,
-		"x-message-ttl":             retrySeconds,
+		"x-message-ttl":             int32(retrySeconds * 1000),
 	}
 
 	if _, err := bus.channel.QueueDeclare(queueNameDl, true, true, false, false, options); err != nil {
