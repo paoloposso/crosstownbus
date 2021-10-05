@@ -74,6 +74,7 @@ func (bus EventBus) Subscribe(event reflect.Type, eventHandler eventbus.EventHan
 
 	var retryOptions amqp.Table
 	retryExchange := ""
+	retryKey := ""
 
 	if resilienceOptions.MaxRetryTimes > 0 {
 		deadLetterExchange, deadLetterRoutingKey, err := bus.createDeadLetter(queueName, reflect.TypeOf(eventHandler).Name(), resilienceOptions.RetrySeconds)
@@ -85,6 +86,7 @@ func (bus EventBus) Subscribe(event reflect.Type, eventHandler eventbus.EventHan
 			"x-dead-letter-routing-key": deadLetterRoutingKey,
 		}
 		retryExchange = deadLetterExchange
+		retryKey = deadLetterRoutingKey
 	}
 
 	queue, err := ch.QueueDeclare(queueName, false, true, false, false, retryOptions)
@@ -119,17 +121,17 @@ func (bus EventBus) Subscribe(event reflect.Type, eventHandler eventbus.EventHan
 			}
 		}()
 	} else {
-		handleWithRetry(msgs, eventHandler, resilienceOptions.MaxRetryTimes)
+		bus.handleWithRetry(msgs, eventHandler, resilienceOptions.MaxRetryTimes, retryExchange, retryKey)
 	}
 	return nil
 }
 
-func handleWithRetry(msgs <-chan amqp.Delivery, eventHandler eventbus.EventHandler, maxRetry int32) {
+func (bus EventBus) handleWithRetry(msgs <-chan amqp.Delivery, eventHandler eventbus.EventHandler, maxRetry int32, retryExchange, retryKey string) {
 	go func() {
 		for msg := range msgs {
 			if err := eventHandler.Handle(msg.Body); err != nil {
 				log.Printf("Error handling message: %s", err)
-				rejectMessage(msg, maxRetry)
+				bus.rejectMessage(msg, maxRetry, retryExchange, retryKey)
 			} else {
 				msg.Ack(false)
 			}
@@ -137,14 +139,14 @@ func handleWithRetry(msgs <-chan amqp.Delivery, eventHandler eventbus.EventHandl
 	}()
 }
 
-func rejectMessage(msg amqp.Delivery, maxRetry int32) {
+func (bus EventBus) rejectMessage(msg amqp.Delivery, maxRetry int32, retryExchange, retryKey string) {
 	var redeliveryCount int32 = 0
 
 	if msg.Headers == nil {
 		msg.Headers = make(amqp.Table)
 	}
 	if _, exists := msg.Headers["x-redelivered-count"]; !exists {
-		msg.Headers["x-redelivered-count"] = int32(1)
+		msg.Headers["x-redelivered-count"] = int32(0)
 	}
 
 	redeliveryCount = msg.Headers["x-redelivered-count"].(int32) + 1
@@ -153,7 +155,13 @@ func rejectMessage(msg amqp.Delivery, maxRetry int32) {
 		msg.Ack(false)
 	} else {
 		msg.Headers["x-redelivered-count"] = redeliveryCount
-		msg.Reject(false)
+		msg.Ack(false)
+		bus.channel.Publish(retryExchange, retryKey, false, false,
+			amqp.Publishing{
+				ContentType: "text/plain",
+				Body:        []byte(msg.Body),
+				Headers:     msg.Headers,
+			})
 	}
 }
 

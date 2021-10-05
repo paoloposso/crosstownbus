@@ -30,7 +30,7 @@ func TestRabbitPubSub(t *testing.T) {
 		}
 		time.Sleep(2 * time.Second)
 		err = bus.Publish(eventsamples.UserCreated{Name: "error"})
-		_ = bus.Publish(eventsamples.UserCreated{Name: "ok"})
+		// _ = bus.Publish(eventsamples.UserCreated{Name: "ok"})
 		if err != nil {
 			t.Fatalf("Error: %q", err)
 		}
