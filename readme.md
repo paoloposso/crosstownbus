@@ -66,3 +66,19 @@ The same bus object can be used to publish events as well.
 ```shell
 bus.Publish(UserCreated{Name: "test", Id: 55})
 ```
+
+### Resilience: Retry Queues on RabbitMQ
+If you need to retry processing a message when you have an error, you can add the following options when subscribing to an event:
+* MaxRetryTimes: Number of times that the message will be moved to the retry queue and requeued to be consumed again.
+* RetrySeconds: Time to wait before the message is requeued.
+
+Example:
+```
+err = bus.Subscribe(reflect.TypeOf(
+	eventsamples.UserCreated{}), 
+	eventsamples.UserCreatedSendMailHandler{}, 
+	&eventbus.ResilienceOptions{RetrySeconds: 5, MaxRetryTimes: 3},
+)
+```
+
+In this case, when your handler returns an error, crosstownbus framework will verify the MaxRetryTimes and, if the max number was not reached, will send the message to the retry queue. As the time to wait (RetrySeconds) is reached, the message will be requeued and you can try to process it again.
