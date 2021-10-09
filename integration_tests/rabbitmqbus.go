@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/paoloposso/crosstownbus"
-	eventbus "github.com/paoloposso/crosstownbus/event_bus"
+	"github.com/paoloposso/crosstownbus/core"
 	eventsamples "github.com/paoloposso/crosstownbus/integration_tests/event_samples"
 )
 
@@ -16,7 +16,7 @@ func TestRabbitPubSub() {
 	if err != nil {
 		log.Fatalf("Error: %q", err)
 	} else {
-		err = bus.Subscribe(reflect.TypeOf(eventsamples.UserCreated{}), eventsamples.UserCreatedSendMailHandler{}, &eventbus.ResilienceOptions{RetrySeconds: 5, MaxRetryTimes: 3})
+		err = bus.Subscribe(reflect.TypeOf(eventsamples.UserCreated{}), eventsamples.UserCreatedSendMailHandler{}, &core.ResilienceOptions{RetrySeconds: 5, MaxRetryTimes: 3})
 		if err != nil {
 			log.Fatalf("Error: %q", err)
 		}

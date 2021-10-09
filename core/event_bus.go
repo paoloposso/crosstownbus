@@ -1,4 +1,4 @@
-package eventbus
+package core
 
 import "reflect"
 

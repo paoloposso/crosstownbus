@@ -6,7 +6,7 @@ import (
 	"log"
 	"reflect"
 
-	eventbus "github.com/paoloposso/crosstownbus/event_bus"
+	"github.com/paoloposso/crosstownbus/core"
 	"github.com/streadway/amqp"
 )
 
@@ -18,7 +18,7 @@ type EventBus struct {
 	channel *amqp.Channel
 }
 
-func CreateEventBus(config RabbitMQConfig) (eventbus.EventBus, error) {
+func CreateEventBus(config RabbitMQConfig) (core.EventBus, error) {
 	conn, err := amqp.Dial(config.Uri)
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func (pub EventBus) Publish(message interface{}) error {
 	return nil
 }
 
-func (bus EventBus) Subscribe(event reflect.Type, eventHandler eventbus.EventHandler, resilienceOptions *eventbus.ResilienceOptions) error {
+func (bus EventBus) Subscribe(event reflect.Type, eventHandler core.EventHandler, resilienceOptions *core.ResilienceOptions) error {
 	eventName := event.Name()
 	ch := bus.channel
 	queueName := fmt.Sprintf("%s.%s_queue", eventName, reflect.TypeOf(eventHandler).Name())
@@ -126,7 +126,7 @@ func (bus EventBus) Subscribe(event reflect.Type, eventHandler eventbus.EventHan
 	return nil
 }
 
-func (bus EventBus) handleWithRetry(msgs <-chan amqp.Delivery, eventHandler eventbus.EventHandler, maxRetry int32, retryExchange, retryKey string) {
+func (bus EventBus) handleWithRetry(msgs <-chan amqp.Delivery, eventHandler core.EventHandler, maxRetry int32, retryExchange, retryKey string) {
 	go func() {
 		for msg := range msgs {
 			if err := eventHandler.Handle(msg.Body); err != nil {

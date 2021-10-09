@@ -6,7 +6,7 @@ import (
 	"reflect"
 
 	"github.com/go-redis/redis"
-	eventbus "github.com/paoloposso/crosstownbus/event_bus"
+	"github.com/paoloposso/crosstownbus/core"
 )
 
 type RedisConfig struct {
@@ -18,7 +18,7 @@ type EventBus struct {
 	redisClient *redis.Client
 }
 
-func CreateBus(config RedisConfig) (eventbus.EventBus, error) {
+func CreateBus(config RedisConfig) (core.EventBus, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     config.Uri,
 		Password: config.Password,
@@ -48,7 +48,7 @@ func (bus EventBus) Publish(message interface{}) error {
 	return nil
 }
 
-func (bus EventBus) Subscribe(event reflect.Type, eventHandler eventbus.EventHandler, resilienceOptions *eventbus.ResilienceOptions) error {
+func (bus EventBus) Subscribe(event reflect.Type, eventHandler core.EventHandler, resilienceOptions *core.ResilienceOptions) error {
 	cmd := bus.redisClient.Ping()
 	if cmd.Err() != nil {
 		return cmd.Err()

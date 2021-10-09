@@ -1,12 +1,12 @@
 package crosstownbus
 
 import (
-	eventbus "github.com/paoloposso/crosstownbus/event_bus"
+	"github.com/paoloposso/crosstownbus/core"
 	rabbitmqbus "github.com/paoloposso/crosstownbus/rabbitmq_bus"
 	redisbus "github.com/paoloposso/crosstownbus/redis_bus"
 )
 
-func CreateRedisEventBus(uri string, password string) (eventbus.EventBus, error) {
+func CreateRedisEventBus(uri string, password string) (core.EventBus, error) {
 	return redisbus.CreateBus(
 		redisbus.RedisConfig{
 			Uri:      uri,
@@ -14,7 +14,7 @@ func CreateRedisEventBus(uri string, password string) (eventbus.EventBus, error)
 		})
 }
 
-func CreateRabbitMQEventBus(uri string) (eventbus.EventBus, error) {
+func CreateRabbitMQEventBus(uri string) (core.EventBus, error) {
 	return rabbitmqbus.CreateEventBus(
 		rabbitmqbus.RabbitMQConfig{
 			Uri: uri,
