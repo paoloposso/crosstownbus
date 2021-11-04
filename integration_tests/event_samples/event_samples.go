@@ -40,13 +40,14 @@ func (handler UserCreatedIncludeHandler) Handle(event []byte) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(user.Name, "received and included:", time.Now())
 
 	time.Sleep(2 * time.Second)
 
 	if user.Name == "error" {
 		return errors.New("error")
 	}
+
+	fmt.Println(user.Name, "received and included:", time.Now())
 
 	return nil
 }

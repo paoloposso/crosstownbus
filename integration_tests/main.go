@@ -6,7 +6,7 @@ import (
 
 func main() {
 	TestRabbitPubSub()
-	TestRedisPubSub()
+	// TestRedisPubSub()
 	ch := make(chan bool, 3)
 	fmt.Printf("%t", <-ch)
 }
