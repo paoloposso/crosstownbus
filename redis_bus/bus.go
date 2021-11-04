@@ -48,7 +48,7 @@ func (bus EventBus) Publish(message interface{}) error {
 	return nil
 }
 
-func (bus EventBus) Subscribe(event reflect.Type, eventHandler core.EventHandler, resilienceOptions *core.ResilienceOptions) error {
+func (bus EventBus) Subscribe(event reflect.Type, eventHandler core.EventHandler, resilienceOptions *core.RetryOptions) error {
 	cmd := bus.redisClient.Ping()
 	if cmd.Err() != nil {
 		return cmd.Err()

@@ -27,17 +27,13 @@ func CreateEventBus(config RabbitMQConfig) (core.EventBus, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err != nil {
-		return nil, err
-	}
 	return EventBus{
 		channel: channel,
 	}, nil
 }
 
 func (pub EventBus) Publish(message interface{}) error {
-	tp := reflect.TypeOf(message)
-	eventName := tp.Name()
+	eventName := reflect.TypeOf(message).Name()
 	body, err := json.Marshal(message)
 	if err != nil {
 		return err
@@ -62,7 +58,7 @@ func (pub EventBus) Publish(message interface{}) error {
 	return nil
 }
 
-func (bus EventBus) Subscribe(event reflect.Type, eventHandler core.EventHandler, resilienceOptions *core.ResilienceOptions) error {
+func (bus EventBus) Subscribe(event reflect.Type, eventHandler core.EventHandler, retryOptions *core.RetryOptions) error {
 	eventName := event.Name()
 	ch := bus.channel
 	queueName := fmt.Sprintf("%s.%s_queue", eventName, reflect.TypeOf(eventHandler).Name())
@@ -72,16 +68,16 @@ func (bus EventBus) Subscribe(event reflect.Type, eventHandler core.EventHandler
 		return err
 	}
 
-	var retryOptions amqp.Table
+	var retryOptionsTable amqp.Table
 	retryExchange := ""
 	retryKey := ""
 
-	if resilienceOptions.MaxRetryTimes > 0 {
-		deadLetterExchange, deadLetterRoutingKey, err := bus.createDeadLetter(queueName, reflect.TypeOf(eventHandler).Name(), resilienceOptions.RetrySeconds)
+	if retryOptions.MaxRetryTimes > 0 {
+		deadLetterExchange, deadLetterRoutingKey, err := bus.createDeadLetter(queueName, reflect.TypeOf(eventHandler).Name(), retryOptions.RetrySeconds)
 		if err != nil {
 			return err
 		}
-		retryOptions = amqp.Table{
+		retryOptionsTable = amqp.Table{
 			"x-dead-letter-exchange":    deadLetterExchange,
 			"x-dead-letter-routing-key": deadLetterRoutingKey,
 		}
@@ -89,10 +85,11 @@ func (bus EventBus) Subscribe(event reflect.Type, eventHandler core.EventHandler
 		retryKey = deadLetterRoutingKey
 	}
 
-	queue, err := ch.QueueDeclare(queueName, false, true, false, false, retryOptions)
+	queue, err := ch.QueueDeclare(queueName, false, true, false, false, retryOptionsTable)
 	if err != nil {
 		return err
 	}
+
 	if retryOptions != nil {
 		if err := ch.QueueBind(queue.Name, queue.Name, retryExchange, false, nil); err != nil {
 			return err
@@ -104,7 +101,7 @@ func (bus EventBus) Subscribe(event reflect.Type, eventHandler core.EventHandler
 	msgs, err := ch.Consume(
 		queueName,
 		"",
-		resilienceOptions == nil,
+		retryOptions == nil,
 		false,
 		false,
 		false,
@@ -114,14 +111,14 @@ func (bus EventBus) Subscribe(event reflect.Type, eventHandler core.EventHandler
 		return err
 	}
 
-	if resilienceOptions == nil || resilienceOptions.MaxRetryTimes == 0 {
+	if retryOptions == nil || retryOptions.MaxRetryTimes == 0 {
 		go func() {
 			for msg := range msgs {
 				go eventHandler.Handle(msg.Body)
 			}
 		}()
 	} else {
-		bus.handleWithRetry(msgs, eventHandler, resilienceOptions.MaxRetryTimes, retryExchange, retryKey)
+		bus.handleWithRetry(msgs, eventHandler, retryOptions.MaxRetryTimes, retryExchange, retryKey)
 	}
 	return nil
 }
@@ -173,7 +170,7 @@ func (bus EventBus) createDeadLetter(queueName string, handler string, retrySeco
 		exchangeNameDl,
 		"direct",
 		true,
-		true,
+		false,
 		false,
 		false,
 		nil,
@@ -187,7 +184,7 @@ func (bus EventBus) createDeadLetter(queueName string, handler string, retrySeco
 		"x-message-ttl":             int32(retrySeconds * 1000),
 	}
 
-	if _, err := bus.channel.QueueDeclare(queueNameDl, true, true, false, false, options); err != nil {
+	if _, err := bus.channel.QueueDeclare(queueNameDl, true, false, false, false, options); err != nil {
 		return "", "", err
 	}
 

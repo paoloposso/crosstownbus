@@ -1,8 +1,7 @@
 # CrosstownBus: a Golang Integration Event and Command Bus
 
-A Go (golang) event and command bus that integrates with message brokers.
+A lightweight Go (golang) event bus that integrates with message brokers.
 Brokers supported so far:
-* Redis
 * RabbitMQ
 
 The objective of this project is to abstract the communication between projects and message brokers, facilitating the creation of event-based services and micro-services.
@@ -22,7 +21,7 @@ To create a bus to communicate using RabbitMQ, call the respective method, after
 bus, err := crosstownbus.CreateRabbitMQEventBus("amqp://guest:guest@localhost:5672/")
 ```
 
-After that, use the `bus` object (sample name) to do perform the operations your deserve in your project, like publishing messages / events and / or subscribe.
+After that, use the `bus` object (sample name) to perform the operations your deserve in your project, like publishing messages / events and / or subscribe.
 
 ### Subscribing to Events
 
@@ -67,7 +66,7 @@ The same bus object can be used to publish events as well.
 bus.Publish(UserCreated{Name: "test", Id: 55})
 ```
 
-### Resilience: Retry Queues on RabbitMQ
+### Retry Options: Retry Queues on RabbitMQ
 If you need to retry processing a message when you have an error, you can add the following options when subscribing to an event:
 * MaxRetryTimes: Number of times that the message will be moved to the retry queue and requeued to be consumed again.
 * RetrySeconds: Time to wait before the message is requeued.
@@ -81,4 +80,4 @@ err = bus.Subscribe(reflect.TypeOf(
 )
 ```
 
-In this case, when your handler returns an error, crosstownbus framework will verify the MaxRetryTimes and, if the max number was not reached, will send the message to the retry queue. As the time to wait (RetrySeconds) is reached, the message will be requeued and you can try to process it again.
+In this case, when your handler returns an error, crosstownbus framework will verify the MaxRetryTimes and, if the max number was not reached, will send the message to the retry queue. When the time to wait (RetrySeconds) is reached, the message will be requeued and the consumer will receive the message again.

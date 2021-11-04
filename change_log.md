@@ -4,3 +4,4 @@
     * Optional parameter
 * 20210925: Added retry support for RabbitMQ
 * 20211004: Added retry count for RabbitMQ
+* 20210910? Remove auto delete exchanges and queues
