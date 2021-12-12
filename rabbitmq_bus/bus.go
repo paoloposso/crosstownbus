@@ -73,7 +73,7 @@ func (bus EventBus) Subscribe(event reflect.Type, eventHandler core.EventHandler
 	retryKey := ""
 
 	if retryOptions.MaxRetryTimes > 0 {
-		deadLetterExchange, deadLetterRoutingKey, err := bus.createDeadLetter(queueName, reflect.TypeOf(eventHandler).Name(), retryOptions.RetrySeconds)
+		deadLetterExchange, deadLetterRoutingKey, err := bus.createDeadLetter(queueName, retryOptions.RetrySeconds)
 		if err != nil {
 			return err
 		}
@@ -162,7 +162,7 @@ func (bus EventBus) rejectMessage(msg amqp.Delivery, maxRetry int32, retryExchan
 	}
 }
 
-func (bus EventBus) createDeadLetter(queueName string, handler string, retrySeconds uint32) (string, string, error) {
+func (bus EventBus) createDeadLetter(queueName string, retrySeconds uint32) (string, string, error) {
 	exchangeNameDl := fmt.Sprintf("%s_retryexh", queueName)
 	queueNameDl := fmt.Sprintf("%s_retry", queueName)
 

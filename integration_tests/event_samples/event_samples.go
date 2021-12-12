@@ -27,7 +27,7 @@ func (handler UserCreatedSendMailHandler) Handle(event []byte) error {
 		return errors.New("error")
 	}
 
-	fmt.Println(user.Name, "received and email sent:", time.Now())
+	fmt.Println(user.Name, "received and email sent at:", time.Now())
 
 	return nil
 }
