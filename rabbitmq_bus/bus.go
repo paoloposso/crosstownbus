@@ -72,7 +72,7 @@ func (bus EventBus) Subscribe(event reflect.Type, eventHandler core.EventHandler
 	retryExchange := ""
 	retryKey := ""
 
-	if retryOptions.MaxRetryTimes > 0 {
+	if retryOptions != nil && retryOptions.MaxRetryTimes > 0 {
 		deadLetterExchange, deadLetterRoutingKey, err := bus.createDeadLetter(queueName, retryOptions.RetrySeconds)
 		if err != nil {
 			return err
